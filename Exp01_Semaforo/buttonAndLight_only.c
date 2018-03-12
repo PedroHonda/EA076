@@ -81,85 +81,40 @@ void TI1_OnInterrupt(void)
     static int cLight = 0;
     static int cDark = 0;
     static int isButton = 0;
-    static int isLight = 1;
+    static int isLight = 0;
     static int period = 0; // period = 0: day, period = 1: night
-    switch (period) {
-        // DAY
-        case 0: 
-            // If the current value is Dark
-            // ----------------NEED TO CHECK HERE FOR PIN/VARIABLE_NAME DESTINATED TO LIGHT
-            if (LIGHT_GetVal() == 0) {
-                cDark++;
-                if (cDark > 10)
-                    isLight = 0;
-            } else {
-                cDark = 0;
-            }
-            // During daytime, we only get light and button measurements when Green Light is on
-            if (SEMAGREEN_GetVal() && !isButton) {
-                // Changing period to Night will only take effect if Pedestrian traffic is not currently enabled
-                if (!isLight) {
-                    cDark = 0;
-                    period = 1;
-                    setPedRed();
-                    setSemaYellow();
-                    break;
-                }
-                // ----------------NEED TO CHECK HERE FOR PIN/VARIABLE_NAME DESTINATED TO BUTTON
-                if (BUTTON_GetVal() == 1) {
-                    isButton = 1;
-                }
-            }
-            if (isButton) {
-                if (cSema < 10){
-                    cSema++;
-                } else if (cSema < 20) {
-                    if (cSema == 20) {
-                        setSemaYellow();
-                    }
-                    cSema++;
-                } else if (cSema < 30) {
-                    if (cSema == 30) {
-                        setSemaRed();
-                        setPedGreen();
-                    }
-                    cSema++;
-                } else if (cSema < 40) {
-                    if (cSema == 40) {
-                        setPedRed();
-                    } else {
-                        PEDRED_NegVal();
-                    }
-                    cSema++;
-                } else {
-                    setSemaGreen();
-                    setPedRed();
-                    cSema=0;
-                    isButton = 0;
-                }
-            }
-            break;
-        // NIGHT
-        case 1:
-            // If the current value is Light
-            if (LIGHT_GetVal() == 1) {
-                cLight++;
-                if (cLight > 10) {
-                    cLight = 0;
-                    period = 0;
-                    setPedRed();
-                    setSemaGreen();
-                    break;
-                }
-            } else {
-                cDark = 0;
-            } 
+
+    if (LIGHT_GetVal()) {
+        cLight++;
+        cDark = 0;
+        if (cLight > 10) {
             setPedRed();
-            SEMAYELLOW_NegVal();
-            break;
+            cLight = 0;
+            period = 0;
+        }
+    } else {
+        cDark++;
+        cLight = 0;
+        if (cDark > 10) {
+            setPedGreen();
+            cLight = 0;
+            period = 1;
+        }
     }
 
+    if (BUTTON_GetVal() || isButton){
+        cButton++;
+        setPedGreen();
+        isButton = 1;
+        if (cButton > 10) {
+            setPedRed();
+            cButton = 0;
+            isButton = 0;
+        }
+    }
+    
 }
+
 void setSemaGreen() {
     SEMAYELLOW_ClrVal();
     SEMARED_ClrVal();
