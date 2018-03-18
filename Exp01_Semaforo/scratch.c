@@ -83,12 +83,19 @@ void TI1_OnInterrupt(void)
     static int isButton = 0;
     static int isLight = 1;
     static int period = 0; // period = 0: day, period = 1: night
+	static int init = 0;
+	if (init == 0) {
+		setSemaGreen();
+		PEDRED_ClrVal();
+		PEDGREEN_SetVal();
+		init++;
+	}
     switch (period) {
         // DAY
         case 0: 
             // If the current value is Dark
             // ----------------NEED TO CHECK HERE FOR PIN/VARIABLE_NAME DESTINATED TO LIGHT
-            if (LIGHT_GetVal() == 0) {
+            if (LIGHT_GetVal() == 1) {
                 cDark++;
                 if (cDark > 10)
                     isLight = 0;
@@ -101,7 +108,7 @@ void TI1_OnInterrupt(void)
                 if (!isLight) {
                     cDark = 0;
                     period = 1;
-                    setPedRed();
+                    setPedGreen();
                     setSemaYellow();
                     break;
                 }
@@ -114,26 +121,30 @@ void TI1_OnInterrupt(void)
                 if (cSema < 10){
                     cSema++;
                 } else if (cSema < 20) {
-                    if (cSema == 20) {
+                    if (cSema == 10) {
                         setSemaYellow();
                     }
                     cSema++;
                 } else if (cSema < 30) {
-                    if (cSema == 30) {
+                    if (cSema == 20) {
                         setSemaRed();
-                        setPedGreen();
+                        // liga led verde
+                        setPedRed();
                     }
                     cSema++;
                 } else if (cSema < 40) {
-                    if (cSema == 40) {
-                        setPedRed();
+                    if (cSema == 30) {
+                    	// liga led vermelho
+                        setPedGreen();
                     } else {
+                    	// pisca led vermelho
                         PEDRED_NegVal();
                     }
                     cSema++;
                 } else {
                     setSemaGreen();
-                    setPedRed();
+                    // pisca led vermelho
+                    setPedGreen();
                     cSema=0;
                     isButton = 0;
                 }
@@ -142,19 +153,22 @@ void TI1_OnInterrupt(void)
         // NIGHT
         case 1:
             // If the current value is Light
-            if (LIGHT_GetVal() == 1) {
+            if (LIGHT_GetVal() == 0) {
                 cLight++;
                 if (cLight > 10) {
                     cLight = 0;
                     period = 0;
-                    setPedRed();
+                    // liga vermelho
+                    setPedGreen();
                     setSemaGreen();
+                    isLight = 1;
                     break;
                 }
             } else {
                 cDark = 0;
             } 
-            setPedRed();
+            // liga o led vermelho
+            PEDRED_NegVal();
             SEMAYELLOW_NegVal();
             break;
     }

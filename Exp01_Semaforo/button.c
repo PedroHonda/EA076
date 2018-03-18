@@ -76,35 +76,45 @@ void setPedGreen();
 void setPedRed();
 void TI1_OnInterrupt(void)
 {
+    static int cButton = 0;
     static int cSema = 0;
-    if (cSema < 10){
-    	PEDRED_ClrVal();
-        cSema++;
-    } else if (cSema < 20) {
-        if (cSema == 10) {
-            setSemaYellow();
-        }
-        cSema++;
-    } else if (cSema < 30) {
-        if (cSema == 20) {
-            setSemaRed();
-            // liga led verde
-            setPedRed();
-        }
-        cSema++;
-    } else if (cSema < 40) {
-        if (cSema == 30) {
-        	// liga led vermelho!!
+    static int cLight = 0;
+    static int cDark = 0;
+    static int isButton = 0;
+    static int isLight = 0;
+    static int period = 0; // period = 0: day, period = 1: night
+
+    /*if (LIGHT_GetVal()) {
+        cLight++;
+        cDark = 0;
+        if (cLight > 10) {
+        	// se for NOITE, ligar led vermelho
             setPedGreen();
-        } else {
-            PEDRED_NegVal();
+            cLight = 0;
+            period = 0;
         }
-        cSema++;
     } else {
-        setSemaGreen();
-        // liga led vermelho
-        setPedGreen();
-        cSema=0;
+        cDark++;
+        cLight = 0;
+        if (cDark > 10) {
+        	// se for DIA, ligar led verde
+            setPedRed();
+            cLight = 0;
+            period = 1;
+        }
+    }*/
+
+    if (BUTTON_GetVal() || isButton){
+        cButton++;
+        // Se apertar o botão, o led verde acenderá
+        setPedRed();
+        isButton = 1;
+        if (cButton > 10) {
+        	// depois de 2.5 segundos, o led apaga
+        	PEDGREEN_SetVal();
+            cButton = 0;
+            isButton = 0;
+        }
     }
     
 }
@@ -132,7 +142,6 @@ void setPedRed() {
     PEDGREEN_ClrVal();
     PEDRED_SetVal();
 }
-
 /* END Events */
 
 #ifdef __cplusplus

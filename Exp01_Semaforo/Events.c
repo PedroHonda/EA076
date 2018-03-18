@@ -77,38 +77,102 @@ void setPedRed();
 void TI1_OnInterrupt(void)
 {
     static int cSema = 0;
-    if (cSema < 10){
-    	PEDRED_ClrVal();
-        cSema++;
-    } else if (cSema < 20) {
-        if (cSema == 10) {
-            setSemaYellow();
-        }
-        cSema++;
-    } else if (cSema < 30) {
-        if (cSema == 20) {
-            setSemaRed();
-            // liga led verde
-            setPedRed();
-        }
-        cSema++;
-    } else if (cSema < 40) {
-        if (cSema == 30) {
-        	// liga led vermelho!!
-            setPedGreen();
-        } else {
+    static int cLight = 0;
+    static int cDark = 0;
+    static int isButton = 0;
+    static int isLight = 1;
+    static int period = 0; // period = 0: day, period = 1: night
+	static int init = 0;
+	if (init == 0) {
+		setSemaGreen();
+		PEDRED_ClrVal();
+		PEDGREEN_SetVal();
+		init++;
+	}
+    switch (period) {
+        // DAY
+        case 0: 
+            // If the current value is Dark
+            // ----------------NEED TO CHECK HERE FOR PIN/VARIABLE_NAME DESTINATED TO LIGHT
+            if (LIGHT_GetVal() == 1) {
+                cDark++;
+                if (cDark > 10)
+                    isLight = 0;
+            } else {
+                cDark = 0;
+            }
+            // During daytime, we only get light and button measurements when Green Light is on
+            if (SEMAGREEN_GetVal() && !isButton) {
+                // Changing period to Night will only take effect if Pedestrian traffic is not currently enabled
+                if (!isLight) {
+                    cDark = 0;
+                    period = 1;
+                    setPedGreen();
+                    setSemaYellow();
+                    break;
+                }
+                // ----------------NEED TO CHECK HERE FOR PIN/VARIABLE_NAME DESTINATED TO BUTTON
+                if (BUTTON_GetVal() == 1) {
+                    isButton = 1;
+                }
+            }
+            if (isButton) {
+                if (cSema < 10){
+                    cSema++;
+                } else if (cSema < 20) {
+                    if (cSema == 10) {
+                        setSemaYellow();
+                    }
+                    cSema++;
+                } else if (cSema < 30) {
+                    if (cSema == 20) {
+                        setSemaRed();
+                        // liga led verde
+                        setPedRed();
+                    }
+                    cSema++;
+                } else if (cSema < 40) {
+                    if (cSema == 30) {
+                    	// liga led vermelho
+                        setPedGreen();
+                    } else {
+                    	// pisca led vermelho
+                        PEDRED_NegVal();
+                    }
+                    cSema++;
+                } else {
+                    setSemaGreen();
+                    // pisca led vermelho
+                    setPedGreen();
+                    cSema=0;
+                    isButton = 0;
+                }
+            }
+            break;
+        // NIGHT
+        case 1:
+            // If the current value is Light
+            if (LIGHT_GetVal() == 0) {
+                cLight++;
+                if (cLight > 10) {
+                    cLight = 0;
+                    period = 0;
+                    // liga vermelho
+                    setPedGreen();
+                    setSemaGreen();
+                    isLight = 1;
+                    break;
+                }
+            } else {
+                cDark = 0;
+            } 
+            // liga o led vermelho
             PEDRED_NegVal();
-        }
-        cSema++;
-    } else {
-        setSemaGreen();
-        // liga led vermelho
-        setPedGreen();
-        cSema=0;
+            SEMAYELLOW_NegVal();
+            break;
     }
-    
-}
 
+}
 void setSemaGreen() {
     SEMAYELLOW_ClrVal();
     SEMARED_ClrVal();
@@ -132,7 +196,6 @@ void setPedRed() {
     PEDGREEN_ClrVal();
     PEDRED_SetVal();
 }
-
 /* END Events */
 
 #ifdef __cplusplus
