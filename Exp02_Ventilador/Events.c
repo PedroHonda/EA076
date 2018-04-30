@@ -71,17 +71,8 @@ void Cpu_OnNMIINT(void)
 */
 void TI1_OnInterrupt(void)
 {
-  /* Write your code here ... */
-	extern int year;
 	extern int counter;
 	counter++;
-	
-	//second = timeDate.Second;
-	//c = second + '0';
-	//PDC1_WriteLineStr(4, c);
-	  if (year == 2000){
-		  LED_PLACA_GREEN_NegVal();
-	  }
 }
 
 /*
@@ -148,21 +139,24 @@ void AS1_OnRxChar(void)
 	extern int endOfCMD;
 	extern int counterBT;
 	extern char BTchar;
-	extern char BTcharBUFF;
+	extern char BTcharBUFF[];
 	
-	// LED_PLACA_NegVal();
+	// Guarda o caractere que chega do terminal Bluetooth para o Modulo HC-06 na variavel BTchar
 	(void)AS1_RecvChar(&BTchar);
-
+	// Caso nao seja determinado o fim do comando, inicia o tratamento do caractere
 	if (!endOfCMD)
+		// Verifica se o comando ja foi iniciado ou nao
 		switch(initCMD){
+			// Em caso negativo, verifica se o caractere e valido ou nao e se for, inicia a leitura do comando
 			case 0:
-				if (BTchar == 'V' || BTcjar == 'E' || BTchar == 'P' || BTchar == 'A' || BTchar == 'M' || BTchar == 'D' || BTchar == 'S' || BTchar == 'H') {
+				if (BTchar == 'V' || BTchar == 'E' || BTchar == 'P' || BTchar == 'A' || BTchar == 'M' || BTchar == 'D' || BTchar == 'S' || BTchar == 'H') {
 					initCMD = 1;
 					endOfCMD = 0;
 					counterBT = 0;
 					BTcharBUFF[counterBT] = BTchar;
-				}
+				} 
 				break;
+			// Em caso positivo, le o comando ate o "*"
 			case 1:
 				counterBT++;
 				BTcharBUFF[counterBT] = BTchar;
@@ -172,11 +166,6 @@ void AS1_OnRxChar(void)
 				}
 				break;
 		}
-
-  /* Write your code here ... */
-	//char c;
-	//AS1_RecvChar(&c);
-	//PDC1_WriteLineStr(1, c);
 	
 }
 
