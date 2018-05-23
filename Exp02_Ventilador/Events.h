@@ -51,6 +51,13 @@
 #include "ASerialLdd1.h"
 #include "LED_PLACA_GREEN.h"
 #include "BitIoLdd2.h"
+#include "VENT.h"
+#include "BitIoLdd3.h"
+#include "EXAU.h"
+#include "BitIoLdd4.h"
+#include "PWM1.h"
+#include "PwmLdd1.h"
+#include "TU2.h"
 
 #ifdef __cplusplus
 extern "C" {

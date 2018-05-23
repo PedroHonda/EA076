@@ -72,16 +72,13 @@ void Cpu_OnNMIINT(void)
 void TI1_OnInterrupt(void)
 {
   /* Write your code here ... */
-	extern int year;
 	extern int counter;
 	counter++;
 	
 	//second = timeDate.Second;
 	//c = second + '0';
 	//PDC1_WriteLineStr(4, c);
-	  if (year == 2000){
-		  LED_PLACA_GREEN_NegVal();
-	  }
+	  
 }
 
 /*
@@ -148,7 +145,7 @@ void AS1_OnRxChar(void)
 	extern int endOfCMD;
 	extern int counterBT;
 	extern char BTchar;
-	extern char BTcharBUFF;
+	extern char BTcharBUFF[];
 	
 	// LED_PLACA_NegVal();
 	(void)AS1_RecvChar(&BTchar);
@@ -156,12 +153,13 @@ void AS1_OnRxChar(void)
 	if (!endOfCMD)
 		switch(initCMD){
 			case 0:
-				if (BTchar == 'V' || BTcjar == 'E' || BTchar == 'P' || BTchar == 'A' || BTchar == 'M' || BTchar == 'D' || BTchar == 'S' || BTchar == 'H') {
+				if (BTchar == 'V' || BTchar == 'E' || BTchar == 'P' || BTchar == 'A' || BTchar == 'M' || BTchar == 'D' || BTchar == 'S' || BTchar == 'H') {
 					initCMD = 1;
 					endOfCMD = 0;
 					counterBT = 0;
 					BTcharBUFF[counterBT] = BTchar;
-				}
+
+				} 
 				break;
 			case 1:
 				counterBT++;
