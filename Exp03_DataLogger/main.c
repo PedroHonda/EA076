@@ -155,6 +155,7 @@ int main(void)
 	  
 	  if (col) {
 		  perCollect = 0;
+		  col = 0;
 		  processKeyboard();
 		  COLUNA1_Disable();
 		  COLUNA2_Disable();
@@ -163,7 +164,6 @@ int main(void)
 		  COLUNA1_Enable();
 		  COLUNA2_Enable();
 		  COLUNA3_Enable();
-		  col = 0;
 	  }
 	  
   }
@@ -192,6 +192,7 @@ int main(void)
 */
 // Return length
 int intToStr (char *c, int integer){
+	
 	int len = 0;
 	int digit;
 	int auxInt = 0;
@@ -201,7 +202,7 @@ int intToStr (char *c, int integer){
 		len++;
 	}
 	auxInt = integer;
-	for(int i=0 ; i<len ; i++){
+	for(int i=1 ; i<=len ; i++){
 		digit = auxInt%10;
 		c[len-i] = digit+48;
 		auxInt /= 10;
@@ -335,9 +336,45 @@ void processKeyboard() {
 					PDC1_WriteLineStr(3, "          ");
 					break;
 				case 7:
+					char data[2];
+					int len;
+					int inteiro;
+					int decimais;
+					char printINT[5];
+					int i;
+					int j;
 					PDC1_WriteLineStr(1, "DUMPING   ");
 					PDC1_WriteLineStr(2, "          ");
 					PDC1_WriteLineStr(3, "          ");
+					EE241_ReadBlock(0x3FE, registrosExistentes, 2);
+					unionAUX.bytes2[1] = registrosExistentes[0];
+					unionAUX.bytes2[0] = registrosExistentes[1];
+					regExist = unionAUX.integer;
+					for (i = 0 ; i <= regExist ; i++){
+						// coleta 2 bytes de leitura da ROM
+						aux = i*2;
+						EE241_ReadBlock(aux, data, 2);
+						// converte 2 bytes em um inteiro
+						unionAUX.bytes2[1] = data[0];
+						unionAUX.bytes2[0] = data[1];
+						// separa digitos em inteiros e decimais
+						inteiro = unionAUX.integer/10;
+						decimais = unionAUX.integer%10;
+						// converte inteiro para string
+						len = intToStr(printINT, inteiro);
+						for (j = 0 ; j < len ; j++) { 
+							AS1_SendChar(printINT[j]);
+						}
+						AS1_SendChar(',');
+						len = intToStr(printINT, decimais);
+						for (j = 0 ; j < len ; j++) { 
+							AS1_SendChar(printINT[j]);
+						}
+						AS1_SendChar('°');
+						AS1_SendChar('C');
+						AS1_SendChar('\r');
+						AS1_SendChar('\n');
+					}
 					break;
 				default:
 					PDC1_WriteLineStr(1, "NO COMMAND");
