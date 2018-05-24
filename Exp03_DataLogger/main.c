@@ -65,12 +65,19 @@
 #include "SCEpin1.h"
 #include "D_Cpin1.h"
 #include "SM1.h"
+#include "COLLECT_TEMP.h"
+#include "TimerIntLdd2.h"
+#include "TU2.h"
+#include "AS1.h"
+#include "ASerialLdd1.h"
 /* Including shared modules, which are used for whole project */
 #include "PE_Types.h"
 #include "PE_Error.h"
 #include "PE_Const.h"
 #include "IO_Map.h"
-
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 /* User includes (#include below this line is not maintained by Processor Expert) */
 uint16_t Temper = 0;
 int Tmvolt = 0;
@@ -86,6 +93,7 @@ union {
 	  uint8_t bytes2[2];
 } unionAUX;
 int newDataRead = 0;
+char reset[2] = {0x00, 0x00};
 char registrosExistentes[2] = {0x00, 0x00};
 char writeData[2];
 int regExist;
@@ -96,17 +104,17 @@ int lin = 0;
 int perCollect = 0; // inicia sem coletar
 /* Functions */
 void processKeyboard();
+int intToStr(char *c, int integer);
 /*lint -save  -e970 Disable MISRA rule (6.3) checking. */
 int main(void)
 /*lint -restore Enable MISRA rule (6.3) checking. */
 {
   /* Write your local variable definition here */
     int writePOS = 0;
-	char reset[2] = {0x00, 0x00};
 	char test1[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
 	char test2[16] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F};
 	char rcv[32] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
+	
   /*** Processor Expert internal initialization. DON'T REMOVE THIS CODE!!! ***/
   PE_low_level_init();
   /*** End of Processor Expert internal initialization.                    ***/
@@ -117,7 +125,7 @@ int main(void)
   //EE241_WriteBlock(0x10, test2, 16);
   //EE241_ReadBlock(0x00, rcv, 32);
   
-	EE241_WriteBlock(0x3FE, reset, 2);	
+	//EE241_WriteBlock(0x3FE, reset, 2);	
   // Após este ponto, o programa entra no loop FOR infinito abaixo, basta dar um pause e ver as variáveis, especialmente o vetor "rcv"
   for(;;){
 	if (perCollect && newDataRead) {
@@ -146,6 +154,7 @@ int main(void)
 	}
 	  
 	  if (col) {
+		  perCollect = 0;
 		  processKeyboard();
 		  COLUNA1_Disable();
 		  COLUNA2_Disable();
@@ -181,7 +190,28 @@ int main(void)
 **
 ** ###################################################################
 */
+// Return length
+int intToStr (char *c, int integer){
+	int len = 0;
+	int digit;
+	int auxInt = 0;
+	auxInt = integer;
+	while(auxInt>0) {
+		auxInt /= 10;
+		len++;
+	}
+	auxInt = integer;
+	for(int i=0 ; i<len ; i++){
+		digit = auxInt%10;
+		c[len-i] = digit+48;
+		auxInt /= 10;
+	}
+	return len;
+}
 void processKeyboard() {
+	int aux = 0;
+	LED_PLACA_NegVal();
+	AS1_SendChar('A');
 	if (lin == 1) {
 		// 1
 		if (col == 1) {
@@ -242,47 +272,52 @@ void processKeyboard() {
 			switch(CMD) {
 				case 1:
 					// Insere 0x00 nas duas ultimas posicoes (1022 e 1023) da EEPROM
-					char reset[2] = {0x00, 0x00};
 					EE241_WriteBlock(0x3FE, reset, 2);
 					PDC1_WriteLineStr(1, "MEMORIA   ");
 					PDC1_WriteLineStr(2, "APAGADA   ");
 					PDC1_WriteLineStr(3, "          ");
 					break;
 				case 2:
-
+					PDC1_WriteLineStr(1, "ID        ");
+					PDC1_WriteLineStr(2, "          ");
+					PDC1_WriteLineStr(3, "          ");
 					break;
 				case 3:
-					int inteiro = Tc/10;
-					int decimais = Tc%10;
-					char printINT[2];
-					char printDEC[1];
-					sprintf(printINT, "%d", inteiro);
-					sprintf(printDEC, "%d", decimais);
+					int len;
+					int inteiro;
+					int decimais;
+					char printINT[5];
 					char printTemp[10];
-					strncpy(printTemp, printINT, 2);
-					strncpy(printTemp+2, ",", 1);
-					strncpy(printTemp+3, printDEC, 1);
-					strncpy(printTemp+4, "°C", 2);
+					inteiro = Tc/10;
+					decimais = Tc%10;
+					len = intToStr(printINT, inteiro);
+					strncpy(printTemp, printINT, len);
+					len = intToStr(printINT, decimais);
+					strncpy(printTemp+len, ",", 1);
+					strncpy(printTemp+len+1, printINT, 1);
+					strncpy(printTemp+len+2, "°C", 2);
 					PDC1_WriteLineStr(1, "MEASURE   ");
 					PDC1_WriteLineStr(2, printTemp);
 					PDC1_WriteLineStr(3, "          ");
 					break;
 				case 4:
-					EE241_ReadBlock(0x3FE, registrosExistentes, 2);
-					unionAUX.bytes2[1] = registrosExistentes[1];
-					unionAUX.bytes2[0] = registrosExistentes[0];
-					regExist = unionAUX.integer;
-					int regDisp = 512 - regExist;
 					char regExistSTR[4];
 					char regDispSTR[4];
-					sprintf(regExistSTR, "%d", regExist);
-					sprintf(regDispSTR, "%d", regDisp);
 					char printExist[10];
 					char printDisp[10];
+					int regDisp;
+					int len;
+					EE241_ReadBlock(0x3FE, registrosExistentes, 2);
+					unionAUX.bytes2[1] = registrosExistentes[0];
+					unionAUX.bytes2[0] = registrosExistentes[1];
+					regExist = unionAUX.integer;
+					regDisp = 512 - regExist;
+					len = intToStr(regExistSTR, regExist);
 					strncpy(printExist, "EXIS:", 5);
-					strncpy(printExist+5, regExistSTR, 4);
+					strncpy(printExist+5, regExistSTR, len);
+					len = intToStr(regDispSTR, regDisp);
 					strncpy(printDisp, "DISP:", 5);
-					strncpy(printDisp+5, regDispSTR, 4);
+					strncpy(printDisp+5, regDispSTR, len);
 					PDC1_WriteLineStr(1, "STATUS    ");
 					PDC1_WriteLineStr(2, printExist);
 					PDC1_WriteLineStr(3, printDisp);
@@ -300,10 +335,14 @@ void processKeyboard() {
 					PDC1_WriteLineStr(3, "          ");
 					break;
 				case 7:
-
+					PDC1_WriteLineStr(1, "DUMPING   ");
+					PDC1_WriteLineStr(2, "          ");
+					PDC1_WriteLineStr(3, "          ");
 					break;
 				default:
 					PDC1_WriteLineStr(1, "NO COMMAND");
+					PDC1_WriteLineStr(2, "          ");
+					PDC1_WriteLineStr(3, "          ");
 			}
 		}
 		// *
