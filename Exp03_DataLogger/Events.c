@@ -101,21 +101,8 @@ void TI1_OnInterrupt(void)
 		lin = 4;
 		counter = 0;
 	}
-	/* -------------------------------------------------------- */
-	/* MOVER ESSA PARTE PARA UMA NOVA INTERRUPCAO DE 2 SEGUNDOS */
-	uint16_t Temper;
-	extern int Tc;
-	extern int Tmvolt;
-	extern int newDataRead;
-	LM61_Measure(TRUE);
-	LM61_GetValue16(&Temper);
-	// T[mV] = 3.3*Temper*1000/65535 
-	Tmvolt = Temper * 3300;
-	Tmvolt /= 65535;
-	Tc = Tmvolt - 600;
-	newDataRead = 1;
-	/* -------------------------------------------------------- */
-	/* -------------------------------------------------------- */
+	
+	//printf("oi");
 }
 
 /*
@@ -231,6 +218,96 @@ void COLUNA1_OnInterrupt(void)
 */
 /* ===================================================================*/
 void SM1_OnBlockSent(LDD_TUserData *UserDataPtr)
+{
+  /* Write your code here ... */
+}
+
+/*
+** ===================================================================
+**     Event       :  COLLECT_TEMP_OnInterrupt (module Events)
+**
+**     Component   :  COLLECT_TEMP [TimerInt]
+**     Description :
+**         When a timer interrupt occurs this event is called (only
+**         when the component is enabled - <Enable> and the events are
+**         enabled - <EnableEvent>). This event is enabled only if a
+**         <interrupt service/event> is enabled.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void COLLECT_TEMP_OnInterrupt(void)
+{
+	uint16_t Temper;
+	static int counter10 = 0;
+	extern int Tc;
+	extern int Tmvolt;
+	extern int newDataRead;
+	counter10++;
+	if (counter10 > 10){
+		LM61_Measure(TRUE);
+		LM61_GetValue16(&Temper);
+		// T[mV] = 3.3*Temper*1000/65535 
+		Tmvolt = Temper * 3300;
+		Tmvolt /= 65535;
+		Tc = Tmvolt - 600;
+		newDataRead = 1;	
+		counter10 = 0;
+	}
+}
+
+/*
+** ===================================================================
+**     Event       :  AS1_OnError (module Events)
+**
+**     Component   :  AS1 [AsynchroSerial]
+**     Description :
+**         This event is called when a channel error (not the error
+**         returned by a given method) occurs. The errors can be read
+**         using <GetError> method.
+**         The event is available only when the <Interrupt
+**         service/event> property is enabled.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void AS1_OnError(void)
+{
+  /* Write your code here ... */
+}
+
+/*
+** ===================================================================
+**     Event       :  AS1_OnRxChar (module Events)
+**
+**     Component   :  AS1 [AsynchroSerial]
+**     Description :
+**         This event is called after a correct character is received.
+**         The event is available only when the <Interrupt
+**         service/event> property is enabled and either the <Receiver>
+**         property is enabled or the <SCI output mode> property (if
+**         supported) is set to Single-wire mode.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void AS1_OnRxChar(void)
+{
+  /* Write your code here ... */
+}
+
+/*
+** ===================================================================
+**     Event       :  AS1_OnTxChar (module Events)
+**
+**     Component   :  AS1 [AsynchroSerial]
+**     Description :
+**         This event is called after a character is transmitted.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void AS1_OnTxChar(void)
 {
   /* Write your code here ... */
 }
